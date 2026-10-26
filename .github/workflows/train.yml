@@ -1,0 +1,1304 @@
+name: GOANGEL Sequential
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons_lookback:
+        default: "3"
+        type: string
+      enrich_xg:
+        default: "true"
+        type: string
+      workers_per_key:
+        default: "4"
+        type: string
+      max_workers:
+        default: "256"
+        type: string
+      rate_limit_per_minute:
+        default: "20"
+        type: string
+      max_attempts_per_model:
+        default: "15"
+        type: string
+      force_stage:
+        default: ""
+        type: string
+      is_retry:
+        default: "false"
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: goangel-sequential
+  cancel-in-progress: true
+
+jobs:
+
+  prepare:
+    name: "prepare"
+    if: inputs.force_stage == '' || inputs.force_stage == 'prepare'
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: prepare
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  refresh:
+    name: "refresh"
+    needs: prepare
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.prepare.result == 'success' ||
+        (inputs.force_stage == 'refresh' && needs.prepare.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: refresh
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_xgb:
+    name: "train_xgb"
+    needs: refresh
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.refresh.result == 'success' ||
+        (inputs.force_stage == 'train_xgb' && needs.refresh.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_xgb
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_lgbm:
+    name: "train_lgbm"
+    needs: train_xgb
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_xgb.result == 'success' ||
+        (inputs.force_stage == 'train_lgbm' && needs.train_xgb.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_lgbm
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_catboost:
+    name: "train_catboost"
+    needs: train_lgbm
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_lgbm.result == 'success' ||
+        (inputs.force_stage == 'train_catboost' && needs.train_lgbm.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_catboost
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_rf:
+    name: "train_rf"
+    needs: train_catboost
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_catboost.result == 'success' ||
+        (inputs.force_stage == 'train_rf' && needs.train_catboost.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_rf
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_dl:
+    name: "train_dl"
+    needs: train_rf
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_rf.result == 'success' ||
+        (inputs.force_stage == 'train_dl' && needs.train_rf.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_dl
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_lr:
+    name: "train_lr"
+    needs: train_dl
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_dl.result == 'success' ||
+        (inputs.force_stage == 'train_lr' && needs.train_dl.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_lr
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_et:
+    name: "train_et"
+    needs: train_lr
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_lr.result == 'success' ||
+        (inputs.force_stage == 'train_et' && needs.train_lr.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_et
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_svm:
+    name: "train_svm"
+    needs: train_et
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_et.result == 'success' ||
+        (inputs.force_stage == 'train_svm' && needs.train_et.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_svm
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_histgb:
+    name: "train_histgb"
+    needs: train_svm
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_svm.result == 'success' ||
+        (inputs.force_stage == 'train_histgb' && needs.train_svm.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_histgb
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_mlp:
+    name: "train_mlp"
+    needs: train_histgb
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_histgb.result == 'success' ||
+        (inputs.force_stage == 'train_mlp' && needs.train_histgb.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_mlp
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_tabm:
+    name: "train_tabm"
+    needs: train_mlp
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_mlp.result == 'success' ||
+        (inputs.force_stage == 'train_tabm' && needs.train_mlp.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_tabm
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_realmlp:
+    name: "train_realmlp"
+    needs: train_tabm
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_tabm.result == 'success' ||
+        (inputs.force_stage == 'train_realmlp' && needs.train_tabm.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_realmlp
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_excelformer:
+    name: "train_excelformer"
+    needs: train_realmlp
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_realmlp.result == 'success' ||
+        (inputs.force_stage == 'train_excelformer' && needs.train_realmlp.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_excelformer
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_ngboost:
+    name: "train_ngboost"
+    needs: train_excelformer
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_excelformer.result == 'success' ||
+        (inputs.force_stage == 'train_ngboost' && needs.train_excelformer.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_ngboost
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_hmm:
+    name: "train_hmm"
+    needs: train_ngboost
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_ngboost.result == 'success' ||
+        (inputs.force_stage == 'train_hmm' && needs.train_ngboost.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_hmm
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_pb_poisson:
+    name: "train_pb_poisson"
+    needs: train_hmm
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_hmm.result == 'success' ||
+        (inputs.force_stage == 'train_pb_poisson' && needs.train_hmm.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_pb_poisson
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_pb_dixon_coles:
+    name: "train_pb_dixon_coles"
+    needs: train_pb_poisson
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_pb_poisson.result == 'success' ||
+        (inputs.force_stage == 'train_pb_dixon_coles' && needs.train_pb_poisson.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_pb_dixon_coles
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_pb_bivariate:
+    name: "train_pb_bivariate"
+    needs: train_pb_dixon_coles
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_pb_dixon_coles.result == 'success' ||
+        (inputs.force_stage == 'train_pb_bivariate' && needs.train_pb_dixon_coles.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_pb_bivariate
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_pb_negbinomial:
+    name: "train_pb_negbinomial"
+    needs: train_pb_bivariate
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_pb_bivariate.result == 'success' ||
+        (inputs.force_stage == 'train_pb_negbinomial' && needs.train_pb_bivariate.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_pb_negbinomial
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_pb_zeroinflated:
+    name: "train_pb_zeroinflated"
+    needs: train_pb_negbinomial
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_pb_negbinomial.result == 'success' ||
+        (inputs.force_stage == 'train_pb_zeroinflated' && needs.train_pb_negbinomial.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_pb_zeroinflated
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_pb_weibull:
+    name: "train_pb_weibull"
+    needs: train_pb_zeroinflated
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_pb_zeroinflated.result == 'success' ||
+        (inputs.force_stage == 'train_pb_weibull' && needs.train_pb_zeroinflated.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_pb_weibull
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_dixon_coles_dynamic:
+    name: "train_dixon_coles_dynamic"
+    needs: train_pb_weibull
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_pb_weibull.result == 'success' ||
+        (inputs.force_stage == 'train_dixon_coles_dynamic' && needs.train_pb_weibull.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_dixon_coles_dynamic
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_kalman:
+    name: "train_kalman"
+    needs: train_dixon_coles_dynamic
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_dixon_coles_dynamic.result == 'success' ||
+        (inputs.force_stage == 'train_kalman' && needs.train_dixon_coles_dynamic.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_kalman
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_hierarchical_advi:
+    name: "train_hierarchical_advi"
+    needs: train_kalman
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_kalman.result == 'success' ||
+        (inputs.force_stage == 'train_hierarchical_advi' && needs.train_kalman.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_hierarchical_advi
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_monte_carlo:
+    name: "train_monte_carlo"
+    needs: train_hierarchical_advi
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_hierarchical_advi.result == 'success' ||
+        (inputs.force_stage == 'train_monte_carlo' && needs.train_hierarchical_advi.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_monte_carlo
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_skellam:
+    name: "train_skellam"
+    needs: train_monte_carlo
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_monte_carlo.result == 'success' ||
+        (inputs.force_stage == 'train_skellam' && needs.train_monte_carlo.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_skellam
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_copula:
+    name: "train_copula"
+    needs: train_skellam
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_skellam.result == 'success' ||
+        (inputs.force_stage == 'train_copula' && needs.train_skellam.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_copula
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  train_stacking:
+    name: "train_stacking"
+    needs: train_copula
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_copula.result == 'success' ||
+        (inputs.force_stage == 'train_stacking' && needs.train_copula.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: train_stacking
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_prep:
+    name: "finalize_prep"
+    needs: train_stacking
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.train_stacking.result == 'success' ||
+        (inputs.force_stage == 'finalize_prep' && needs.train_stacking.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_prep
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_xgb:
+    name: "finalize_xgb"
+    needs: finalize_prep
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_prep.result == 'success' ||
+        (inputs.force_stage == 'finalize_xgb' && needs.finalize_prep.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_xgb
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_lgbm:
+    name: "finalize_lgbm"
+    needs: finalize_xgb
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_xgb.result == 'success' ||
+        (inputs.force_stage == 'finalize_lgbm' && needs.finalize_xgb.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_lgbm
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_catboost:
+    name: "finalize_catboost"
+    needs: finalize_lgbm
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_lgbm.result == 'success' ||
+        (inputs.force_stage == 'finalize_catboost' && needs.finalize_lgbm.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_catboost
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_rf:
+    name: "finalize_rf"
+    needs: finalize_catboost
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_catboost.result == 'success' ||
+        (inputs.force_stage == 'finalize_rf' && needs.finalize_catboost.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_rf
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_dl:
+    name: "finalize_dl"
+    needs: finalize_rf
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_rf.result == 'success' ||
+        (inputs.force_stage == 'finalize_dl' && needs.finalize_rf.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_dl
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_lr:
+    name: "finalize_lr"
+    needs: finalize_dl
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_dl.result == 'success' ||
+        (inputs.force_stage == 'finalize_lr' && needs.finalize_dl.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_lr
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_et:
+    name: "finalize_et"
+    needs: finalize_lr
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_lr.result == 'success' ||
+        (inputs.force_stage == 'finalize_et' && needs.finalize_lr.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_et
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_svm:
+    name: "finalize_svm"
+    needs: finalize_et
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_et.result == 'success' ||
+        (inputs.force_stage == 'finalize_svm' && needs.finalize_et.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_svm
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_histgb:
+    name: "finalize_histgb"
+    needs: finalize_svm
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_svm.result == 'success' ||
+        (inputs.force_stage == 'finalize_histgb' && needs.finalize_svm.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_histgb
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_mlp:
+    name: "finalize_mlp"
+    needs: finalize_histgb
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_histgb.result == 'success' ||
+        (inputs.force_stage == 'finalize_mlp' && needs.finalize_histgb.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_mlp
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_tabm:
+    name: "finalize_tabm"
+    needs: finalize_mlp
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_mlp.result == 'success' ||
+        (inputs.force_stage == 'finalize_tabm' && needs.finalize_mlp.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_tabm
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_realmlp:
+    name: "finalize_realmlp"
+    needs: finalize_tabm
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_tabm.result == 'success' ||
+        (inputs.force_stage == 'finalize_realmlp' && needs.finalize_tabm.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_realmlp
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_excelformer:
+    name: "finalize_excelformer"
+    needs: finalize_realmlp
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_realmlp.result == 'success' ||
+        (inputs.force_stage == 'finalize_excelformer' && needs.finalize_realmlp.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_excelformer
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_ngboost:
+    name: "finalize_ngboost"
+    needs: finalize_excelformer
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_excelformer.result == 'success' ||
+        (inputs.force_stage == 'finalize_ngboost' && needs.finalize_excelformer.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_ngboost
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_hmm:
+    name: "finalize_hmm"
+    needs: finalize_ngboost
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_ngboost.result == 'success' ||
+        (inputs.force_stage == 'finalize_hmm' && needs.finalize_ngboost.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_hmm
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_pb_poisson:
+    name: "finalize_pb_poisson"
+    needs: finalize_hmm
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_hmm.result == 'success' ||
+        (inputs.force_stage == 'finalize_pb_poisson' && needs.finalize_hmm.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_pb_poisson
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_pb_dixon_coles:
+    name: "finalize_pb_dixon_coles"
+    needs: finalize_pb_poisson
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_pb_poisson.result == 'success' ||
+        (inputs.force_stage == 'finalize_pb_dixon_coles' && needs.finalize_pb_poisson.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_pb_dixon_coles
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_pb_bivariate:
+    name: "finalize_pb_bivariate"
+    needs: finalize_pb_dixon_coles
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_pb_dixon_coles.result == 'success' ||
+        (inputs.force_stage == 'finalize_pb_bivariate' && needs.finalize_pb_dixon_coles.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_pb_bivariate
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_pb_negbinomial:
+    name: "finalize_pb_negbinomial"
+    needs: finalize_pb_bivariate
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_pb_bivariate.result == 'success' ||
+        (inputs.force_stage == 'finalize_pb_negbinomial' && needs.finalize_pb_bivariate.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_pb_negbinomial
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_pb_zeroinflated:
+    name: "finalize_pb_zeroinflated"
+    needs: finalize_pb_negbinomial
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_pb_negbinomial.result == 'success' ||
+        (inputs.force_stage == 'finalize_pb_zeroinflated' && needs.finalize_pb_negbinomial.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_pb_zeroinflated
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_pb_weibull:
+    name: "finalize_pb_weibull"
+    needs: finalize_pb_zeroinflated
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_pb_zeroinflated.result == 'success' ||
+        (inputs.force_stage == 'finalize_pb_weibull' && needs.finalize_pb_zeroinflated.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_pb_weibull
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_dixon_coles_dynamic:
+    name: "finalize_dixon_coles_dynamic"
+    needs: finalize_pb_weibull
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_pb_weibull.result == 'success' ||
+        (inputs.force_stage == 'finalize_dixon_coles_dynamic' && needs.finalize_pb_weibull.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_dixon_coles_dynamic
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_kalman:
+    name: "finalize_kalman"
+    needs: finalize_dixon_coles_dynamic
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_dixon_coles_dynamic.result == 'success' ||
+        (inputs.force_stage == 'finalize_kalman' && needs.finalize_dixon_coles_dynamic.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_kalman
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_hierarchical_advi:
+    name: "finalize_hierarchical_advi"
+    needs: finalize_kalman
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_kalman.result == 'success' ||
+        (inputs.force_stage == 'finalize_hierarchical_advi' && needs.finalize_kalman.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_hierarchical_advi
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_monte_carlo:
+    name: "finalize_monte_carlo"
+    needs: finalize_hierarchical_advi
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_hierarchical_advi.result == 'success' ||
+        (inputs.force_stage == 'finalize_monte_carlo' && needs.finalize_hierarchical_advi.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_monte_carlo
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_skellam:
+    name: "finalize_skellam"
+    needs: finalize_monte_carlo
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_monte_carlo.result == 'success' ||
+        (inputs.force_stage == 'finalize_skellam' && needs.finalize_monte_carlo.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_skellam
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_copula:
+    name: "finalize_copula"
+    needs: finalize_skellam
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_skellam.result == 'success' ||
+        (inputs.force_stage == 'finalize_copula' && needs.finalize_skellam.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_copula
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_stacking:
+    name: "finalize_stacking"
+    needs: finalize_copula
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_copula.result == 'success' ||
+        (inputs.force_stage == 'finalize_stacking' && needs.finalize_copula.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_stacking
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  finalize_agg:
+    name: "finalize_agg"
+    needs: finalize_stacking
+    if: |
+      always() && !cancelled() &&
+      (
+        needs.finalize_stacking.result == 'success' ||
+        (inputs.force_stage == 'finalize_agg' && needs.finalize_stacking.result != 'failure')
+      )
+    uses: ./.github/workflows/_stage_runner.yml
+    with:
+      stage: finalize_agg
+      seasons_lookback: ${{ inputs.seasons_lookback }}
+      enrich_xg: ${{ inputs.enrich_xg }}
+      workers_per_key: ${{ inputs.workers_per_key }}
+      max_workers: ${{ inputs.max_workers }}
+      rate_limit_per_minute: ${{ inputs.rate_limit_per_minute }}
+      max_attempts_per_model: ${{ inputs.max_attempts_per_model }}
+      is_retry: ${{ inputs.is_retry }}
+    secrets: inherit
+
+  release:
+    name: "release"
+    needs: finalize_agg
+    if: |
+      always() && !cancelled() &&
+      (needs.finalize_agg.result == 'success' || inputs.force_stage == 'release')
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ""
+    secrets: inherit

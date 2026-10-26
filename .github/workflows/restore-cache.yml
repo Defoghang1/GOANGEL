@@ -1,0 +1,16 @@
+name: Restore Cache
+on:
+  workflow_dispatch:
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install rclone
+        run: curl -sS https://rclone.org/install.sh | sudo bash >/dev/null 2>&1
+      - name: Run restore
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+        run: python3 restore_drive.py
