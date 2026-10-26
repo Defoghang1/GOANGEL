@@ -680,6 +680,9 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 def _atomic_write_json(path: Path, data: Any) -> None:
+    if path.exists() and path.is_dir():
+        import shutil
+        shutil.rmtree(path, ignore_errors=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False, default=str)
@@ -778,6 +781,12 @@ def _mark_stage_done(stage: str) -> bool:
     artifacts = _stage_artifacts(stage)
     if not artifacts:
         return False
+    # Sécurité anti-dossier (IsADirectoryError)
+    done_file = _stage_done_path(stage)
+    if done_file.exists() and done_file.is_dir():
+        import shutil
+        shutil.rmtree(done_file, ignore_errors=True)
+
     hashes: Dict[str, str] = {}
     for path in artifacts:
         if not path.exists():
