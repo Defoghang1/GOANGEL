@@ -1,0 +1,11 @@
+{
+  "stage": "train_negbin_reg",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/ml_NegBinReg.pkl": "6343d51bbfd348437f38ea053bd493d7e4e0dcabc595c7d2bbf536f4d782553a"
+  },
+  "ts": "2026-10-30T06:09:48.561909",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

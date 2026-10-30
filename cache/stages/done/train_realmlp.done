@@ -1,0 +1,11 @@
+{
+  "stage": "train_realmlp",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/ml_RealMLP.pkl": "83400d151b7cf5d63a62c1ca4e7581da76cedb421ce82d2874012b945c8534e3"
+  },
+  "ts": "2026-10-30T05:36:49.237195",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

@@ -1,0 +1,11 @@
+{
+  "stage": "train_rf",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/ml_RF.pkl": "14764c6d5c0cb55f01349bbf1b0b16a4e37ff312f3770bdcd5156cbbf28c41ca"
+  },
+  "ts": "2026-10-30T05:12:20.666634",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

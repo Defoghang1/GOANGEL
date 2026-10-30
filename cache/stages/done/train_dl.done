@@ -1,0 +1,8 @@
+{
+  "stage": "train_dl",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/ml_DL.pkl": "30580366521254f4206de3435c2da736b180f104692ba08913acf5c92758cad4"
+  },
+  "ts": "2026-10-26T21:43:49.110287",
+  "schema": "goangel-bzzoiro-2026.10-v2"
+}

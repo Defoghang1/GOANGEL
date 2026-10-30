@@ -1,0 +1,11 @@
+{
+  "stage": "train_lgbm",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/ml_LGBM.pkl": "cab83bd937ef5afc1c219c2a591524511ed28df50c2608a93e714a814f33ed78"
+  },
+  "ts": "2026-10-30T04:50:00.451237",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

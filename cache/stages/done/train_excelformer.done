@@ -1,0 +1,8 @@
+{
+  "stage": "train_excelformer",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/ml_ExcelFormer.pkl": "384df40f9b367f0a9209cce94c9578b51343c793b32f21e919b63ef77a72e4ae"
+  },
+  "ts": "2026-10-26T22:32:54.818316",
+  "schema": "goangel-bzzoiro-2026.10-v2"
+}

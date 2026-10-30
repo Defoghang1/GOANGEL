@@ -1,0 +1,13 @@
+{
+  "stage": "prepare",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/features.pkl": "38c5153cde54bfd1edc6030bbf0830e88d1358283942db397a6036f1690eacfa",
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/metadata.pkl": "c1be19f2b7d24605877569f7e885351bf302a8c8bf813cf253dcdd423d69c78c",
+    "/home/runner/work/GOANGEL/GOANGEL/cache/historical.pkl": "4f56ff61768e9593ed9fa2da671b2af4cfde17881930941d998d293ce2bfa071"
+  },
+  "ts": "2026-10-30T04:35:18.577314",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

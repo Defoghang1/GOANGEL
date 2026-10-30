@@ -1,0 +1,11 @@
+{
+  "stage": "train_pb_negbinomial",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/pb_NegativeBinomialGoalModel.pkl": "110d1b69f8d225b20f0ef86064e2df9d5acb7708ffcaf59eea2750f0d72cffb5"
+  },
+  "ts": "2026-10-30T07:21:43.485034",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

@@ -1,0 +1,8 @@
+{
+  "stage": "train_hmm",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/pb_HMMModel.pkl": "0898de9fadb8376fd92aa931477b11670dedcfa2de6265f4944198dfc9e53948"
+  },
+  "ts": "2026-10-26T22:44:49.876623",
+  "schema": "goangel-bzzoiro-2026.10-v2"
+}

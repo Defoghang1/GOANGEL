@@ -1,0 +1,8 @@
+{
+  "stage": "finalize_hierarchical_advi",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/finalize/HierarchicalBayesianADVIModel.pkl": "9b431b351dfc8e89ee544def3b3707509643de853bcbbb578f20844972abb3b8"
+  },
+  "ts": "2026-10-27T03:13:27.152367",
+  "schema": "goangel-bzzoiro-2026.10-v2"
+}

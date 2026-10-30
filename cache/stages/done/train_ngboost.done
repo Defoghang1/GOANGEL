@@ -1,0 +1,11 @@
+{
+  "stage": "train_ngboost",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/ml_NGBoost.pkl": "b806632636bc64fc6650052a7d4a7502b7a19c5dc0931f35f5cc60638e054a19"
+  },
+  "ts": "2026-10-30T05:08:21.844475",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

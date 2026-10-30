@@ -1,0 +1,11 @@
+{
+  "stage": "train_pb_poisson",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/pb_PoissonGoalsModel.pkl": "631aab91877b03cb190b299fca9bf870c67545a654277342641be4666d22cb76"
+  },
+  "ts": "2026-10-30T06:31:28.646843",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

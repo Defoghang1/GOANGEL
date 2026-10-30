@@ -1,0 +1,11 @@
+{
+  "stage": "train_svm",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/ml_SVM.pkl": "7bd456a61843db29ba0d002b834ca3ac6a4cae295ae92b40f8b6e90be5982f9e"
+  },
+  "ts": "2026-10-30T06:02:19.665753",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

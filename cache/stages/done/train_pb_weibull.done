@@ -1,0 +1,11 @@
+{
+  "stage": "train_pb_weibull",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/pb_WeibullCopulaGoalsModel.pkl": "b685e3675a51d7c138b5c806953d3092b94b7494fc2a5a098b49158f4cb49dee"
+  },
+  "ts": "2026-10-30T10:04:17.680109",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

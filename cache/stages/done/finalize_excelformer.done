@@ -1,0 +1,8 @@
+{
+  "stage": "finalize_excelformer",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/finalize/ExcelFormer.pkl": "19a29d80e2aa7376bc10018c63e6bcc2bc75e7dae66cccc1f50326dc6209fc67"
+  },
+  "ts": "2026-10-27T02:09:50.133834",
+  "schema": "goangel-bzzoiro-2026.10-v2"
+}

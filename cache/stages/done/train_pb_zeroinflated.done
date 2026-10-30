@@ -1,0 +1,11 @@
+{
+  "stage": "train_pb_zeroinflated",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/models/pb_ZeroInflatedPoissonGoalsModel.pkl": "1230f8eed7bcf1fb58cca0670640dbff6486f39d26d7abdf2513be57ce667be3"
+  },
+  "ts": "2026-10-30T07:47:17.886294",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

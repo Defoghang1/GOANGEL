@@ -1,0 +1,11 @@
+{
+  "stage": "refresh",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/historical.pkl": "ecc9151f2b9315c4198b63f2dcb40521f47f0763ee9fa3bca4c8d8c8161c3a71"
+  },
+  "ts": "2026-10-30T04:40:56.654425",
+  "schema": "goangel-bzzoiro-2026.10-v2",
+  "feature_schema": 190,
+  "leagues_sig": "a0cd95530281",
+  "selection_id": "64716089bf95"
+}

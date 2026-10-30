@@ -1,0 +1,8 @@
+{
+  "stage": "finalize_hmm",
+  "files": {
+    "/home/runner/work/GOANGEL/GOANGEL/cache/stages/finalize/HMMModel.pkl": "aa217076ce466781748e5e718de2a05527996ffc5dd53a959c237ca2a79152c0"
+  },
+  "ts": "2026-10-27T02:17:51.655674",
+  "schema": "goangel-bzzoiro-2026.10-v2"
+}
