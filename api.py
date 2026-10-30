@@ -36,17 +36,17 @@ class BzzoiroAPIError(Exception):
     pass
 
 
-_RATE_LIMIT_PER_MINUTE: int = 10
+_RATE_LIMIT_PER_MINUTE: int = 60
 _RATE_LIMIT_SAFETY_MARGIN: int = 1
 _RATE_LIMIT_WINDOW_SECONDS: float = 60.0
 _RATE_LIMIT_POLL_INTERVAL_SECONDS: float = 0.1
 _MAX_REQUESTS_HISTORY_PER_TOKEN: int = 512
 
-_API_PAGE_LIMIT: int = 100
+_API_PAGE_LIMIT: int = 200
 _API_MAX_PAGE_LIMIT: int = 200
-_API_PAGE_SLEEP_SECONDS: float = 0.15
+_API_PAGE_SLEEP_SECONDS: float = 0.05
 
-_MAX_PARALLEL_WORKERS: int = max(1, min(len(tokens), 8))
+_MAX_PARALLEL_WORKERS: int = max(1, min(len(tokens), 64))
 
 _CHECKPOINT_DIR: Path = CACHE_DIR / "checkpoints"
 _CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
