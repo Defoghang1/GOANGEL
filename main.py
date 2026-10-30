@@ -1437,8 +1437,11 @@ def _stage_run(stage_name: str) -> int:
 
     _env_ok = True
     _env_reasons = []
-    for _f in (Path(CACHE_DIR) / "historical.pkl",
-               Path(CACHE_DIR) / "stages" / "features.pkl"):
+    _check_files = [] if stage_name in ("prepare", "refresh") else [
+        Path(CACHE_DIR) / "historical.pkl",
+        Path(CACHE_DIR) / "stages" / "features.pkl"
+    ]
+    for _f in _check_files:
         if not _f.exists():
             _env_ok = False
             _env_reasons.append(f"absent: {_f.name}")
