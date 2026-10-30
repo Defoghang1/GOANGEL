@@ -1,0 +1,53 @@
+name: Release Complete Cache
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cache-auto branch
+        uses: actions/checkout@v4
+        with:
+          ref: cache-auto
+
+      - name: Setup Rclone
+        uses: AnimMouse/setup-rclone@v1
+        with:
+          rclone_config: ${{ secrets.RCLONE_CONFIG }}
+
+      - name: Download full cache from Google Drive
+        run: |
+          echo "📥 Téléchargement des 80 Mo depuis Google Drive..."
+          rclone listremotes
+          rclone sync gdrive:GOANGEL/cache ./cache --progress
+          echo "✅ Téléchargement terminé."
+          du -sh cache/
+
+      - name: Create single archive
+        run: |
+          echo "📦 Création de l'archive complète (qui fera ~80 Mo)..."
+          tar -czvf goangel_cache_complete.tar.gz cache/
+          ls -lh goangel_cache_complete.tar.gz
+
+      - name: Upload as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOANGEL_CACHE_COMPLETE
+          path: goangel_cache_complete.tar.gz
+          retention-days: 14
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: goangel_cache_complete.tar.gz
+          name: "Cache Complet - ${{ github.run_id }}"
+          tag_name: "cache-v${{ github.run_id }}"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
